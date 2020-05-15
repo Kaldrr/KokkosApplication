@@ -10,12 +10,12 @@ namespace gpu {
 
 namespace matrix {
 
-    Kokkos::View<double**> getRandomMatrix(std::size_t height, std::size_t width, std::string_view name)
+    Kokkos::View<float**> getRandomMatrix(std::size_t height, std::size_t width, std::string_view name)
     {
         std::mt19937 generator { std::random_device {}() };
-        std::uniform_real_distribution<double> rng { 1.0, 100.0 };
+        std::uniform_real_distribution<float> rng { 0.1f, 1.0f };
 
-        Kokkos::View<double**> matrix { std::string { name }, height, width };
+        Kokkos::View<float**> matrix { std::string { name }, height, width };
 
         for (std::size_t i = 0; i < height; ++i) {
             for (std::size_t j = 0; j < width; ++j) {
@@ -26,7 +26,7 @@ namespace matrix {
         return matrix;
     }
 
-    bool equals(const Kokkos::View<double**>& lhs, const Kokkos::View<double**>& rhs)
+    bool equals(const Kokkos::View<float**>& lhs, const Kokkos::View<float**>& rhs)
     {
         const std::array<std::size_t, 2> leftMatrixSize { lhs.extent(0), lhs.extent(1) };
         const std::array<std::size_t, 2> rightMatrixSize { rhs.extent(0), rhs.extent(1) };
@@ -35,7 +35,7 @@ namespace matrix {
             return false;
         }
 
-        constexpr double epsilon = 0.0001;
+        constexpr float epsilon = 0.01;
 
         for (std::size_t i { 0 }; i < leftMatrixSize[0]; ++i) {
             for (std::size_t j { 0 }; j < leftMatrixSize[1]; ++j) {
@@ -51,19 +51,19 @@ namespace matrix {
 
 std::map<std::string, double> measureMatrixTimes(std::pair<int, int> leftMatrixSize, std::pair<int, int> rightMatrixSize)
 {
-    using Matrix = Kokkos::View<double**>;
+
+    using Matrix = Kokkos::View<float**>;
 
     constexpr int teamSize = 8;
 
     constexpr auto compareMatrix = [](const Matrix& reference, const Matrix& tested, std::string_view leftName, std::string_view rightName) {
-        // if (!matrix::equals(reference, tested)) {
-        //     std::cout << leftName << " and " << rightName << " differ!\n";
-        // }
+        if (!matrix::equals(reference, tested)) {
+            std::cout << leftName << " and " << rightName << " differ!\n";
+        }
     };
 
     const Matrix x = matrix::getRandomMatrix(leftMatrixSize.first, leftMatrixSize.second);
     const Matrix y = matrix::getRandomMatrix(rightMatrixSize.first, rightMatrixSize.second);
-
     std::map<std::string, double> parallelTimes {};
     Kokkos::Timer timer {};
 
